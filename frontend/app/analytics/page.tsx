@@ -90,7 +90,7 @@ export default function AnalyticsPage() {
               <CartesianGrid strokeDasharray="3 3" horizontal={false} />
               <XAxis type="number" tickFormatter={fmt} tick={{ fontSize: 12 }} />
               <YAxis type="category" dataKey="department" tick={{ fontSize: 12 }} />
-              <Tooltip formatter={(v: number) => fmt(v)} />
+              <Tooltip formatter={(v) => fmt(Number(v))} />
               <Bar dataKey="avg_salary" fill="#3b82f6" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
