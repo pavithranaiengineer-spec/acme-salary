@@ -1,4 +1,4 @@
-const BASE_URL = "https://acme-salary-production.up.railway.app";
+const BASE_URL = "http://localhost:8000";
 export interface Employee {
   id: string;
   employee_id: string;
