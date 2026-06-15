@@ -24,15 +24,6 @@ def get_employees(
 
     if status:
         query = query.filter(Employee.status == status)
-    if search:
-        query = query.filter(
-            or_(
-                Employee.first_name.ilike(f"%{search}%"),
-                Employee.last_name.ilike(f"%{search}%"),
-                Employee.employee_id.ilike(f"%{search}%"),
-                Employee.email.ilike(f"%{search}%")
-            )
-        )
     if department:
         query = query.filter(Employee.department == department)
     if country:
@@ -40,10 +31,48 @@ def get_employees(
     if employment_type:
         query = query.filter(Employee.employment_type == employment_type)
 
+    if search:
+        search = search.strip()
+        # full name search: "erin lee" → split and match first+last
+        parts = search.split()
+        if len(parts) >= 2:
+            query = query.filter(
+                or_(
+                    # "erin lee" matches first=erin, last=lee
+                    (Employee.first_name.ilike(f"%{parts[0]}%") &
+                     Employee.last_name.ilike(f"%{parts[1]}%")),
+                    # also try reverse: "lee erin"
+                    (Employee.first_name.ilike(f"%{parts[1]}%") &
+                     Employee.last_name.ilike(f"%{parts[0]}%")),
+                    Employee.employee_id.ilike(f"%{search}%"),
+                )
+            )
+        else:
+            query = query.filter(
+                or_(
+                    Employee.first_name.ilike(f"%{search}%"),
+                    Employee.last_name.ilike(f"%{search}%"),
+                    Employee.employee_id.ilike(f"%{search}%"),
+                )
+            )
+
     total = query.count()
+
+    # Sort: exact first name match first, then alphabetical
+    if search and len(search.split()) == 1:
+        from sqlalchemy import case
+        query = query.order_by(
+            case(
+                (Employee.first_name.ilike(search), 0),
+                else_=1
+            ),
+            Employee.first_name
+        )
+    else:
+        query = query.order_by(Employee.first_name)
+
     results = query.offset((page - 1) * page_size).limit(page_size).all()
     return total, results
-
 
 def get_employee_by_id(db: Session, employee_id: str):
     return db.query(Employee).filter(Employee.id == employee_id).first()
