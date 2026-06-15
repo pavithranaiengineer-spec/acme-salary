@@ -31,8 +31,13 @@ def list_employees(
 
 @router.post("", response_model=EmployeeOut, status_code=201)
 def create_employee(data: EmployeeCreate, db: Session = Depends(get_db)):
-    return employee_service.create_employee(db, data)
-
+    try:
+        return employee_service.create_employee(db, data)
+    except Exception as e:
+        db.rollback()
+        if "UNIQUE constraint failed: employees.email" in str(e):
+            raise HTTPException(status_code=409, detail="An employee with this email already exists.")
+        raise HTTPException(status_code=500, detail="Failed to create employee.")
 
 @router.get("/export")
 def export_employees(
